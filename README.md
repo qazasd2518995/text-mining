@@ -1,84 +1,67 @@
-# Text Mining Tutorial in JavaScript
+# Text Mining Tutorial in R - Shinylive Version
 
-An interactive web application for learning text mining and natural language processing techniques using JavaScript.
+This is an interactive R Shiny application for learning text mining techniques, converted to run in the browser using **Shinylive**. This version preserves all the original R code while making it deployable as a static website.
 
-## Features
+## 🌟 Features
 
-- **Interactive Tutorial**: Step-by-step lessons on text mining concepts
-- **Live Code Editor**: Practice text processing with immediate feedback  
-- **Visualizations**: Word frequency charts and word clouds
-- **Text Processing**: JavaScript implementations of common text mining operations
-- **Responsive Design**: Works on desktop and mobile devices
+- **Interactive R Environment**: Run real R code in your browser
+- **Complete Text Mining Tutorial**: From basics to advanced techniques
+- **Live Code Editor**: Practice with immediate feedback
+- **Visualizations**: Word clouds, frequency charts, and more
+- **No Installation Required**: Everything runs in the browser
 
-## Getting Started
+## 🚀 Deployment
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+This application is ready to deploy to any static hosting platform:
 
-### Installation
+### Vercel (Recommended)
+1. Connect your GitHub repository to Vercel
+2. Deploy automatically from the `shinylive-export` folder
+3. No build configuration needed
 
-1. Clone or download this repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+### Other Platforms
+- **Netlify**: Drag and drop the entire `shinylive-export` folder
+- **GitHub Pages**: Push to a `gh-pages` branch
+- **Any static hosting**: Upload all files to your web server
 
-## Deployment to Vercel
+## 📚 Tutorial Contents
 
-This application is ready to deploy to Vercel:
-
-1. Install Vercel CLI:
-   ```bash
-   npm install -g vercel
-   ```
-
-2. Deploy:
-   ```bash
-   vercel
-   ```
-
-Or connect your GitHub repository to Vercel for automatic deployments.
-
-## Tutorial Contents
-
-- **Getting Started**: Introduction to text mining concepts
-- **Text Basics**: Basic string operations and manipulation
-- **Text Preprocessing**: Cleaning and preparing text data
-- **Word Frequency**: Analyzing word frequencies and patterns
-- **Word Clouds**: Visualizing text data
-- **Practice Lab**: Interactive exercises
+- **Getting Started**: Introduction to text mining with R
+- **Text Basics**: String operations and manipulation
+- **Text Preprocessing**: Cleaning and preparing data
+- **Word Frequency Analysis**: Understanding word patterns
+- **Word Clouds**: Visual text representation
+- **Practice Lab**: Hands-on exercises
 - **Resources**: Additional learning materials
 
-## Technologies Used
+## 🔧 Technology
 
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Recharts (for data visualization)
-- Lucide React (for icons)
+- **R Shiny**: Original application framework
+- **Shinylive**: WebAssembly-based R runtime
+- **WebAssembly**: Runs R code natively in the browser
+- **Bootstrap**: UI framework for responsive design
 
-## Text Processing Features
+## 📦 R Packages Included
 
-- Tokenization
-- Stop word removal
-- Punctuation and number removal
-- Case normalization
-- Basic stemming
-- Word frequency analysis
-- N-gram generation
-- Text statistics
+The app includes these R packages for text mining:
+- `tm` - Text mining framework
+- `wordcloud` - Word cloud generation
+- `ggplot2` - Data visualization
+- `RColorBrewer` - Color palettes
+- `stringr` - String manipulation (fallback to base R)
 
-## Contributing
+## 🌐 Browser Requirements
 
-Feel free to submit issues and enhancement requests!
+Works in all modern browsers that support WebAssembly:
+- Chrome 57+
+- Firefox 52+
+- Safari 11+
+- Edge 16+
 
-## License
+## 📝 License
 
-MIT License - feel free to use this project for educational purposes.
+MIT License - Free for educational and commercial use.
+
+## 🤖 Generated with Claude Code
+
+This application was converted to Shinylive format using Claude Code for seamless web deployment.

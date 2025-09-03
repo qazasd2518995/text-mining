@@ -1,0 +1,722 @@
+# Text Mining Tutorial in R - Robust Version
+# This version includes fallbacks for missing packages
+
+# Install missing packages if needed (uncomment as necessary)
+# install.packages(c("shiny", "shinydashboard", "DT", "shinyAce", "tm", 
+#                    "tidytext", "wordcloud", "RColorBrewer", "ggplot2", 
+#                    "dplyr", "stringr", "plotly", "SnowballC"))
+
+# Load required libraries with error handling
+required_packages <- c("shiny", "shinydashboard", "DT", "tm", "tidytext", 
+                      "wordcloud", "RColorBrewer", "ggplot2", "dplyr", 
+                      "stringr", "plotly", "SnowballC")
+
+# Try to load shinyAce, use fallback if not available
+use_ace <- FALSE
+if (requireNamespace("shinyAce", quietly = TRUE)) {
+  library(shinyAce)
+  use_ace <- TRUE
+  message("Using shinyAce for code editing")
+} else {
+  message("shinyAce not available - using text areas instead")
+}
+
+# Load other packages
+for (pkg in required_packages) {
+  if (requireNamespace(pkg, quietly = TRUE)) {
+    library(pkg, character.only = TRUE)
+  } else {
+    warning(paste("Package", pkg, "not available"))
+  }
+}
+
+# Function to create code input (with fallback)
+create_code_input <- function(id, value = "", height = "200px") {
+  if (use_ace) {
+    aceEditor(id, value = value, mode = "r", height = height)
+  } else {
+    textAreaInput(id, label = NULL, value = value, 
+                 width = "100%", height = height,
+                 placeholder = "Enter your R code here...")
+  }
+}
+
+# Define UI
+ui <- dashboardPage(
+  dashboardHeader(title = "Learn Text Mining in R - Interactive Tutorial"),
+  
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Getting Started", tabName = "intro", icon = icon("play-circle")),
+      menuItem("Text Basics", tabName = "basics", icon = icon("font")),
+      menuItem("Text Preprocessing", tabName = "preprocessing", icon = icon("broom")),
+      menuItem("Word Frequency", tabName = "frequency", icon = icon("chart-bar")),
+      menuItem("Word Clouds", tabName = "wordcloud", icon = icon("cloud")),
+      menuItem("Sentiment Analysis", tabName = "sentiment", icon = icon("smile")),
+      menuItem("N-grams & Phrases", tabName = "ngrams", icon = icon("link")),
+      menuItem("Document-Term Matrix", tabName = "dtm", icon = icon("table")),
+      menuItem("Practice Lab", tabName = "practice", icon = icon("laptop-code")),
+      menuItem("Resources", tabName = "resources", icon = icon("bookmark"))
+    )
+  ),
+  
+  dashboardBody(
+    tags$head(
+      tags$style(HTML("
+        .content-wrapper, .right-side {
+          background-color: #f8f9fa;
+        }
+        .code-output {
+          background-color: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          padding: 10px;
+          font-family: 'Courier New', monospace;
+          white-space: pre-wrap;
+        }
+        .exercise-box {
+          background-color: #e8f5e8;
+          border-left: 4px solid #4caf50;
+          padding: 15px;
+          margin: 10px 0;
+        }
+        .tip-box {
+          background-color: #fff3e0;
+          border-left: 4px solid #ff9800;
+          padding: 10px;
+          margin: 10px 0;
+        }
+        .warning-box {
+          background-color: #ffebee;
+          border-left: 4px solid #f44336;
+          padding: 10px;
+          margin: 10px 0;
+        }
+        textarea {
+          font-family: 'Courier New', monospace;
+          font-size: 12px;
+        }
+      "))
+    ),
+    
+    tabItems(
+      # Introduction Tab
+      tabItem(
+        tabName = "intro",
+        fluidRow(
+          box(
+            title = "Welcome to Text Mining with R!", status = "primary", solidHeader = TRUE, width = 12,
+            h3("What is Text Mining?"),
+            p("Text mining (also called text analytics) is the process of extracting meaningful information 
+              from unstructured text data. It combines techniques from statistics, linguistics, and machine learning."),
+            
+            h4("What Can You Do with Text Mining?"),
+            tags$ul(
+              tags$li("Analyze customer feedback and reviews"),
+              tags$li("Study social media sentiment"),
+              tags$li("Extract topics from documents"),
+              tags$li("Classify documents automatically"),
+              tags$li("Find patterns in literature or news"),
+              tags$li("Create word clouds and visualizations")
+            ),
+            
+            h4("R Packages for Text Mining"),
+            p("R has excellent packages for text analysis:"),
+            tags$ul(
+              tags$li(strong("tm"), " - Traditional text mining framework"),
+              tags$li(strong("tidytext"), " - Tidy approach to text analysis"),
+              tags$li(strong("wordcloud"), " - Create beautiful word clouds"),
+              tags$li(strong("stringr"), " - String manipulation"),
+              tags$li(strong("SnowballC"), " - Text stemming")
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Your First Text Analysis", status = "success", solidHeader = TRUE, width = 6,
+            p("Let's start by analyzing a simple text:"),
+            div(class = "exercise-box",
+                strong("Try this: "), "Count words in a sentence"
+            ),
+            create_code_input("intro_code", 
+                     value = "# Your first text analysis\ntext <- \"Text mining is fun and useful for data science\"\n\n# Split into words\nwords <- strsplit(text, \" \")[[1]]\nprint(words)\n\n# Count words\nlength(words)", 
+                     height = "150px"),
+            br(),
+            actionButton("run_intro", "Run Code", class = "btn-success"),
+            br(), br(),
+            h5("Output:"),
+            verbatimTextOutput("intro_output")
+          ),
+          
+          box(
+            title = "Text Mining Workflow", status = "info", solidHeader = TRUE, width = 6,
+            h5("Typical Steps in Text Mining:"),
+            tags$ol(
+              tags$li("Data Collection"),
+              tags$li("Text Preprocessing"),
+              tags$li("Tokenization"),
+              tags$li("Cleaning (remove stopwords, punctuation)"),
+              tags$li("Analysis (frequency, sentiment, topics)"),
+              tags$li("Visualization and Interpretation")
+            ),
+            div(class = "tip-box",
+                strong("Tip: "), "Most time in text mining is spent on preprocessing and cleaning!"
+            )
+          )
+        )
+      ),
+      
+      # Text Basics Tab
+      tabItem(
+        tabName = "basics",
+        fluidRow(
+          box(
+            title = "Working with Text in R", status = "primary", solidHeader = TRUE, width = 12,
+            h4("Basic Text Operations"),
+            p("Before we dive into complex analysis, let's learn basic text manipulation in R:"),
+            
+            fluidRow(
+              column(6,
+                h5("String Functions:"),
+                tags$pre(
+"# Basic string operations
+nchar(text)          # Count characters
+toupper(text)        # Convert to uppercase
+tolower(text)        # Convert to lowercase
+substr(text, 1, 5)   # Extract substring
+paste(a, b, sep=' ') # Combine strings"
+                )
+              ),
+              column(6,
+                h5("Pattern Matching:"),
+                tags$pre(
+"# Find and replace patterns
+grep('pattern', text)      # Find pattern
+gsub('old', 'new', text)   # Replace pattern
+str_detect(text, 'word')   # Detect word
+str_count(text, 'word')    # Count occurrences"
+                )
+              )
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Practice Text Operations", status = "success", solidHeader = TRUE, width = 12,
+            fluidRow(
+              column(6,
+                create_code_input("basics_code", 
+                         value = "# Sample text\nmy_text <- \"R is great for Data Science and Text Mining!\"\n\n# Basic operations\nprint(paste(\"Original:\", my_text))\nprint(paste(\"Length:\", nchar(my_text)))\nprint(paste(\"Lowercase:\", tolower(my_text)))\nprint(paste(\"First 10 chars:\", substr(my_text, 1, 10)))\n\n# Count specific words\nif (requireNamespace('stringr', quietly = TRUE)) {\n  library(stringr)\n  print(paste(\"Count of 'a':\", str_count(tolower(my_text), \"a\")))\n} else {\n  print(\"stringr package not available\")\n}", 
+                         height = "350px")
+              ),
+              column(6,
+                br(),
+                actionButton("run_basics", "Run Code", class = "btn-success"),
+                br(), br(),
+                h5("Output:"),
+                verbatimTextOutput("basics_output")
+              )
+            )
+          )
+        )
+      ),
+      
+      # Text Preprocessing Tab
+      tabItem(
+        tabName = "preprocessing",
+        fluidRow(
+          box(
+            title = "Text Preprocessing", status = "primary", solidHeader = TRUE, width = 12,
+            h4("Why Preprocess Text?"),
+            p("Raw text contains noise that can interfere with analysis. Preprocessing cleans and standardizes text:"),
+            
+            tags$ul(
+              tags$li("Remove punctuation and special characters"),
+              tags$li("Convert to lowercase"),
+              tags$li("Remove stopwords (common words like 'the', 'and')"),
+              tags$li("Remove extra whitespace"),
+              tags$li("Stem or lemmatize words")
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Preprocessing Functions", status = "warning", solidHeader = TRUE, width = 6,
+            h5("Common Preprocessing Steps:"),
+            tags$pre(
+"# Load required libraries
+library(tm)
+library(stringr)
+
+# Remove punctuation
+removePunctuation(text)
+
+# Remove numbers  
+removeNumbers(text)
+
+# Remove stopwords
+removeWords(text, stopwords('english'))
+
+# Strip whitespace
+stripWhitespace(text)
+
+# Stemming
+stemDocument(text)"
+            )
+          ),
+          
+          box(
+            title = "Interactive Preprocessing", status = "success", solidHeader = TRUE, width = 6,
+            create_code_input("preprocess_code", 
+                     value = "# Sample messy text\nraw_text <- \"Hello!!! This is SAMPLE text with 123 numbers, punctuation... and LOTS of issues???\"\n\n# Step by step cleaning\nstep1 <- tolower(raw_text)\n\n# Basic punctuation removal if tm not available\nif (requireNamespace('tm', quietly = TRUE)) {\n  library(tm)\n  step2 <- removePunctuation(step1)\n  step3 <- removeNumbers(step2)\n  step4 <- stripWhitespace(step3)\n} else {\n  # Manual cleaning\n  step2 <- gsub('[[:punct:]]', ' ', step1)\n  step3 <- gsub('[[:digit:]]', ' ', step2)\n  step4 <- gsub('\\\\s+', ' ', trimws(step3))\n}\n\nprint(paste(\"Original:\", raw_text))\nprint(paste(\"Cleaned:\", step4))\n\n# Remove stopwords\nbasic_stopwords <- c('the', 'and', 'is', 'this', 'with', 'of', 'a', 'an')\nwords <- strsplit(step4, \" \")[[1]]\ncleaned_words <- words[!words %in% basic_stopwords & words != \"\"]\nfinal_text <- paste(cleaned_words, collapse = \" \")\nprint(paste(\"No stopwords:\", final_text))", 
+                     height = "350px"),
+            br(),
+            actionButton("run_preprocess", "Run Code", class = "btn-success")
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Preprocessing Output", status = "info", solidHeader = TRUE, width = 12,
+            verbatimTextOutput("preprocess_output"),
+            br(),
+            div(class = "tip-box",
+                strong("Best Practice: "), "Always examine your text before and after preprocessing to ensure you're not removing important information!"
+            )
+          )
+        )
+      ),
+      
+      # Word Frequency Tab
+      tabItem(
+        tabName = "frequency",
+        fluidRow(
+          box(
+            title = "Word Frequency Analysis", status = "primary", solidHeader = TRUE, width = 12,
+            h4("Understanding Word Frequencies"),
+            p("Word frequency analysis reveals which words appear most often in your text. 
+              This is fundamental to many text mining applications."),
+            
+            h5("Methods for Frequency Analysis:"),
+            tags$ul(
+              tags$li("Simple word counting"),
+              tags$li("Term frequency (TF)"),
+              tags$li("Term frequency-inverse document frequency (TF-IDF)"),
+              tags$li("Frequency plots and charts")
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Create Frequency Analysis", status = "success", solidHeader = TRUE, width = 6,
+            create_code_input("frequency_code", 
+                     value = "# Sample text corpus\ntexts <- c(\n  \"Text mining is the process of deriving information from text\",\n  \"Data science involves analyzing data to extract insights\", \n  \"Machine learning helps in analyzing patterns in data\",\n  \"Text analysis is important for understanding documents\"\n)\n\n# Combine all texts\nall_text <- paste(texts, collapse = \" \")\n\n# Basic preprocessing\ncleaned <- tolower(all_text)\n# Manual punctuation removal\ncleaned <- gsub('[[:punct:]]', ' ', cleaned)\n# Split into words\nwords <- strsplit(cleaned, \"\\\\s+\")[[1]]\n\n# Remove empty strings and basic stopwords\nbasic_stopwords <- c('the', 'is', 'of', 'to', 'and', 'in', 'for', 'from')\nwords <- words[words != \"\" & !words %in% basic_stopwords]\n\n# Count frequency\nword_freq <- table(words)\nword_freq_sorted <- sort(word_freq, decreasing = TRUE)\n\nprint(\"Top 10 most frequent words:\")\nprint(head(word_freq_sorted, 10))", 
+                     height = "400px"),
+            br(),
+            actionButton("run_frequency", "Run Code", class = "btn-success")
+          ),
+          
+          box(
+            title = "Frequency Results & Plot", status = "info", solidHeader = TRUE, width = 6,
+            verbatimTextOutput("frequency_output"),
+            br(),
+            plotOutput("frequency_plot", height = "250px")
+          )
+        )
+      ),
+      
+      # Word Cloud Tab
+      tabItem(
+        tabName = "wordcloud",
+        fluidRow(
+          box(
+            title = "Word Clouds", status = "primary", solidHeader = TRUE, width = 12,
+            h4("Visualizing Text with Word Clouds"),
+            p("Word clouds provide an intuitive way to visualize word frequencies. 
+              Larger words appear more frequently in the text."),
+            
+            div(class = "warning-box",
+                strong("Note: "), "Word clouds are great for exploration but should be supplemented with quantitative analysis for serious research."
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Create Your Word Cloud", status = "success", solidHeader = TRUE, width = 6,
+            h5("Sample Text Options:"),
+            selectInput("text_source", "Choose text source:",
+                       choices = list(
+                         "Sample Data Science Text" = "datasci",
+                         "Literature Sample" = "literature", 
+                         "Custom Text" = "custom"
+                       )),
+            
+            conditionalPanel(
+              condition = "input.text_source == 'custom'",
+              textAreaInput("custom_text", "Enter your text:",
+                           value = "Enter your own text here for analysis...",
+                           rows = 5, width = "100%")
+            ),
+            
+            h5("Word Cloud Settings:"),
+            sliderInput("max_words", "Maximum words:", min = 10, max = 100, value = 50),
+            selectInput("color_palette", "Color scheme:",
+                       choices = list("Dark2", "Set1", "Pastel1", "Blues")),
+            br(),
+            actionButton("create_wordcloud", "Create Word Cloud", class = "btn-success")
+          ),
+          
+          box(
+            title = "Your Word Cloud", status = "info", solidHeader = TRUE, width = 6,
+            plotOutput("wordcloud_plot", height = "400px")
+          )
+        )
+      ),
+      
+      # Practice Lab Tab
+      tabItem(
+        tabName = "practice",
+        fluidRow(
+          box(
+            title = "Text Mining Practice Lab", status = "primary", solidHeader = TRUE, width = 12,
+            h4("Apply Your Knowledge"),
+            p("Use this area to practice text mining techniques. Try these challenges:"),
+            
+            div(class = "exercise-box",
+                h5("Challenge 1: Text Cleaning"),
+                p("Clean this messy text: 'Hello!!! This is 123 MESSY text with punctuation... Clean it up!'")
+            ),
+            
+            div(class = "exercise-box",
+                h5("Challenge 2: Frequency Analysis"),
+                p("Find the top 5 most common words in a collection of sentences (excluding stopwords).")
+            ),
+            
+            div(class = "exercise-box",
+                h5("Challenge 3: Simple Pattern Matching"),
+                p("Count how many times specific words appear in text using grep or string functions.")
+            ),
+            
+            div(class = "exercise-box",
+                h5("Challenge 4: Basic Text Statistics"),
+                p("Calculate text statistics: number of characters, words, and sentences.")
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Your Code", status = "success", solidHeader = TRUE, width = 6,
+            create_code_input("practice_code", 
+                     value = "# Practice area - write your text mining code here\n# Try the challenges above!\n\n# Challenge 1 example:\nmessy_text <- \"Hello!!! This is 123 MESSY text with punctuation... Clean it up!\"\n\n# Your solution here:\ncleaned <- tolower(messy_text)\ncleaned <- gsub('[[:punct:]]', ' ', cleaned)\ncleaned <- gsub('[[:digit:]]', ' ', cleaned)\ncleaned <- gsub('\\\\s+', ' ', trimws(cleaned))\n\nprint(paste(\"Original:\", messy_text))\nprint(paste(\"Cleaned:\", cleaned))", 
+                     height = "450px"),
+            br(),
+            actionButton("run_practice", "Run Code", class = "btn-success"),
+            br(),
+            actionButton("clear_practice", "Clear Code", class = "btn-warning")
+          ),
+          
+          box(
+            title = "Output & Notes", status = "info", solidHeader = TRUE, width = 6,
+            verbatimTextOutput("practice_output"),
+            br(),
+            h5("Quick Reference:"),
+            tags$ul(
+              tags$li("tolower(), toupper()"),
+              tags$li("gsub(), grep()"),
+              tags$li("strsplit(), paste()"),
+              tags$li("table(), sort()")
+            ),
+            br(),
+            div(class = "tip-box",
+                strong("Note: "), "This version works with base R functions when specialized text mining packages are not available."
+            )
+          )
+        )
+      ),
+      
+      # Resources Tab
+      tabItem(
+        tabName = "resources",
+        fluidRow(
+          box(
+            title = "Text Mining Resources", status = "primary", solidHeader = TRUE, width = 12,
+            
+            fluidRow(
+              column(6,
+                h4("Essential R Packages"),
+                tags$ul(
+                  tags$li(strong("tm"), " - Traditional text mining framework"),
+                  tags$li(strong("tidytext"), " - Tidy text mining approach"),
+                  tags$li(strong("stringr"), " - String manipulation"),
+                  tags$li(strong("wordcloud"), " - Word cloud generation"),
+                  tags$li(strong("SnowballC"), " - Stemming algorithms"),
+                  tags$li(strong("textdata"), " - Sentiment lexicons")
+                ),
+                
+                h4("Installation Commands"),
+                tags$pre(
+"# Install all at once:
+install.packages(c(
+  'tm', 'tidytext', 'stringr', 
+  'wordcloud', 'SnowballC',
+  'shinyAce'
+))"
+                )
+              ),
+              
+              column(6,
+                h4("Base R Text Functions"),
+                tags$pre(
+"# String manipulation
+nchar(), substr(), paste()
+toupper(), tolower()
+grep(), gsub(), grepl()
+strsplit(), trimws()
+
+# Pattern matching
+[[:punct:]]  # Punctuation
+[[:digit:]]  # Numbers
+[[:alpha:]]  # Letters
+\\\\s+        # Whitespace"
+                ),
+                
+                h4("Common Tasks"),
+                tags$ul(
+                  tags$li("Text cleaning and preprocessing"),
+                  tags$li("Word frequency analysis"),
+                  tags$li("Sentiment analysis"),
+                  tags$li("Document classification"),
+                  tags$li("Topic modeling")
+                )
+              )
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = "Package Installation Help", status = "warning", solidHeader = TRUE, width = 6,
+            h5("If packages are missing:"),
+            tags$ol(
+              tags$li("Run: install.packages('package_name')"),
+              tags$li("Restart R session"),
+              tags$li("Try library(package_name)"),
+              tags$li("Check for error messages")
+            ),
+            
+            div(class = "tip-box",
+                strong("Tip: "), "Some packages may require additional system dependencies on Linux/Mac."
+            )
+          ),
+          
+          box(
+            title = "Next Steps", status = "success", solidHeader = TRUE, width = 6,
+            h5("Continue Learning:"),
+            tags$ul(
+              tags$li("Practice with real text data"),
+              tags$li("Learn advanced preprocessing techniques"),
+              tags$li("Explore sentiment analysis methods"),
+              tags$li("Study topic modeling with LDA"),
+              tags$li("Try text classification algorithms")
+            ),
+            
+            h5("Useful Datasets:"),
+            tags$ul(
+              tags$li("Built-in R datasets with text"),
+              tags$li("Movie reviews for sentiment"),
+              tags$li("News articles for topic modeling"),
+              tags$li("Customer reviews for business analysis")
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+# Define Server Logic
+server <- function(input, output, session) {
+  
+  # Introduction tab
+  observeEvent(input$run_intro, {
+    output$intro_output <- renderText({
+      tryCatch({
+        result <- capture.output({
+          eval(parse(text = input$intro_code))
+        })
+        paste(result, collapse = "\n")
+      }, error = function(e) {
+        paste("Error:", e$message)
+      })
+    })
+  })
+  
+  # Basic operations tab
+  observeEvent(input$run_basics, {
+    output$basics_output <- renderText({
+      tryCatch({
+        result <- capture.output({
+          eval(parse(text = input$basics_code))
+        })
+        paste(result, collapse = "\n")
+      }, error = function(e) {
+        paste("Error:", e$message)
+      })
+    })
+  })
+  
+  # Preprocessing tab
+  observeEvent(input$run_preprocess, {
+    output$preprocess_output <- renderText({
+      tryCatch({
+        result <- capture.output({
+          eval(parse(text = input$preprocess_code))
+        })
+        paste(result, collapse = "\n")
+      }, error = function(e) {
+        paste("Error:", e$message)
+      })
+    })
+  })
+  
+  # Frequency analysis tab
+  observeEvent(input$run_frequency, {
+    output$frequency_output <- renderText({
+      tryCatch({
+        result <- capture.output({
+          eval(parse(text = input$frequency_code))
+        })
+        paste(result, collapse = "\n")
+      }, error = function(e) {
+        paste("Error:", e$message)
+      })
+    })
+    
+    # Create frequency plot
+    output$frequency_plot <- renderPlot({
+      tryCatch({
+        # Re-run the analysis to get data
+        eval(parse(text = input$frequency_code))
+        
+        # Create plot data
+        if (exists("word_freq_sorted") && length(word_freq_sorted) > 0) {
+          freq_df <- data.frame(
+            word = names(head(word_freq_sorted, 8)),
+            frequency = as.numeric(head(word_freq_sorted, 8))
+          )
+          
+          if (requireNamespace("ggplot2", quietly = TRUE)) {
+            library(ggplot2)
+            ggplot(freq_df, aes(x = reorder(word, frequency), y = frequency)) +
+              geom_col(fill = "steelblue", alpha = 0.7) +
+              coord_flip() +
+              labs(title = "Top 8 Most Frequent Words", 
+                   x = "Words", y = "Frequency") +
+              theme_minimal()
+          } else {
+            # Fallback to base R plot
+            barplot(freq_df$frequency, names.arg = freq_df$word,
+                   main = "Word Frequencies", horiz = TRUE, las = 1,
+                   col = "steelblue")
+          }
+        }
+      }, error = function(e) {
+        plot.new()
+        text(0.5, 0.5, paste("Error:", e$message), cex = 1.2, col = "red")
+      })
+    })
+  })
+  
+  # Word cloud tab
+  observeEvent(input$create_wordcloud, {
+    output$wordcloud_plot <- renderPlot({
+      tryCatch({
+        # Get text based on selection
+        if (input$text_source == "datasci") {
+          text_data <- "Data science is an interdisciplinary field that uses scientific methods processes algorithms and systems to extract knowledge and insights from structured and unstructured data. Machine learning artificial intelligence statistics and big data analytics are core components of data science"
+        } else if (input$text_source == "literature") {
+          text_data <- "It was the best of times it was the worst of times it was the age of wisdom it was the age of foolishness it was the epoch of belief it was the epoch of incredulity it was the season of light it was the season of darkness"
+        } else {
+          text_data <- input$custom_text
+        }
+        
+        # Preprocess text
+        text_clean <- tolower(text_data)
+        text_clean <- gsub('[[:punct:]]', ' ', text_clean)
+        text_clean <- gsub('[[:digit:]]', ' ', text_clean)
+        words <- strsplit(text_clean, "\\s+")[[1]]
+        
+        # Basic stopwords
+        basic_stopwords <- c("the", "and", "is", "it", "was", "of", "to", "a", "an", "in", "on", "at", "for", "with", "by")
+        words <- words[!words %in% basic_stopwords & words != ""]
+        
+        # Calculate frequencies
+        word_freq <- table(words)
+        
+        # Create word cloud
+        if (requireNamespace("wordcloud", quietly = TRUE) && length(word_freq) > 0) {
+          library(wordcloud)
+          library(RColorBrewer)
+          
+          wordcloud(names(word_freq), freq = word_freq, 
+                   max.words = input$max_words,
+                   colors = brewer.pal(8, input$color_palette),
+                   random.order = FALSE,
+                   rot.per = 0.3,
+                   scale = c(3, 0.5))
+        } else {
+          # Fallback visualization
+          if (length(word_freq) > 0) {
+            top_words <- head(sort(word_freq, decreasing = TRUE), 20)
+            barplot(top_words, main = "Word Frequencies (wordcloud package not available)",
+                   las = 2, col = rainbow(length(top_words)))
+          } else {
+            plot.new()
+            text(0.5, 0.5, "No words to display", cex = 1.5)
+          }
+        }
+      }, error = function(e) {
+        plot.new()
+        text(0.5, 0.5, paste("Error:", e$message), cex = 1.2, col = "red")
+      })
+    })
+  })
+  
+  # Practice lab
+  observeEvent(input$run_practice, {
+    output$practice_output <- renderText({
+      tryCatch({
+        if (input$practice_code == "" || trimws(input$practice_code) == "") {
+          "Write some text mining code and click 'Run Code' to see the output!"
+        } else {
+          result <- capture.output({
+            eval(parse(text = input$practice_code))
+          })
+          paste(result, collapse = "\n")
+        }
+      }, error = function(e) {
+        paste("Error:", e$message, "\n\nTip: Check your syntax and make sure all quotes and parentheses are balanced.")
+      })
+    })
+  })
+  
+  observeEvent(input$clear_practice, {
+    if (use_ace) {
+      updateAceEditor(session, "practice_code", 
+                     value = "# Practice area - write your text mining code here\n# Try the challenges above!\n\n# Challenge 1 example:\nmessy_text <- \"Hello!!! This is 123 MESSY text with punctuation... Clean it up!\"\n\n# Your solution here:\ncleaned <- tolower(messy_text)\ncleaned <- gsub('[[:punct:]]', ' ', cleaned)\ncleaned <- gsub('[[:digit:]]', ' ', cleaned)\ncleaned <- gsub('\\\\s+', ' ', trimws(cleaned))\n\nprint(paste(\"Original:\", messy_text))\nprint(paste(\"Cleaned:\", cleaned))")
+    } else {
+      updateTextAreaInput(session, "practice_code", 
+                         value = "# Practice area - write your text mining code here\n# Try the challenges above!\n\n# Challenge 1 example:\nmessy_text <- \"Hello!!! This is 123 MESSY text with punctuation... Clean it up!\"\n\n# Your solution here:\ncleaned <- tolower(messy_text)\ncleaned <- gsub('[[:punct:]]', ' ', cleaned)\ncleaned <- gsub('[[:digit:]]', ' ', cleaned)\ncleaned <- gsub('\\\\s+', ' ', trimws(cleaned))\n\nprint(paste(\"Original:\", messy_text))\nprint(paste(\"Cleaned:\", cleaned))")
+    }
+    output$practice_output <- renderText("")
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
